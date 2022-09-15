@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "stringinfo.h": "c",
+    "jsonapi.h": "c",
+    "jsonpath.h": "c",
+    "jsonb.h": "c",
+    "pg_type.h": "c"
+  }
+}
