@@ -13,6 +13,7 @@
  */
 #include "postgres.h"
 
+#include "common/yamlapi.h"
 #include "catalog/pg_type.h"
 #include "funcapi.h"
 #include "libpq/pqformat.h"
@@ -22,8 +23,8 @@
 #include "utils/builtins.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
-#include "utils/json.h"
-#include "utils/jsonfuncs.h"
+#include "utils/yaml.h"
+#include "utils/yamlfunc.h"
 #include "utils/lsyscache.h"
 #include "utils/typcache.h"
 
@@ -33,8 +34,14 @@
 Datum
 yaml_in(PG_FUNCTION_ARGS)
 {
-	char	   *json = PG_GETARG_CSTRING(0);
-	text	   *result = cstring_to_text(json);
+	char	   *yaml = PG_GETARG_CSTRING(0);
+	text	   *result = cstring_to_text(yaml);
+
+	YamlContext *yamlContext;
+
+	/* validate it */
+	yamlContext = makeYamlContext(result, false);
+	pg_parse_yaml_or_ereport(yamlContext);
 
 	/* Internal representation is the same as text, for now */
 	PG_RETURN_TEXT_P(result);

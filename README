@@ -28,7 +28,7 @@ web site located at https://www.postgresql.org/.
 
 Building the database
 =====================================
-./configure
+./configure LDFLAGS="-lyaml"
 make
 su
 make install

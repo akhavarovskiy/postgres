@@ -110,7 +110,6 @@ OBJS = \
 	tsvector.o \
 	tsvector_op.o \
 	tsvector_parser.o \
-	yaml.o \
 	uuid.o \
 	varbit.o \
 	varchar.o \
@@ -119,7 +118,11 @@ OBJS = \
 	windowfuncs.o \
 	xid.o \
 	xid8funcs.o \
-	xml.o
+	xml.o \
+	yaml.o \
+	yamlfunc.o \
+	yamlapi.o
+
 
 # See notes in src/backend/parser/Makefile about the following two rules
 jsonpath_gram.h: jsonpath_gram.c
