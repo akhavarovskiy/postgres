@@ -1,0 +1,44 @@
+/* confdefs.h */
+#define PACKAGE_NAME "PostgreSQL"
+#define PACKAGE_TARNAME "postgresql"
+#define PACKAGE_VERSION "16devel"
+#define PACKAGE_STRING "PostgreSQL 16devel"
+#define PACKAGE_BUGREPORT "pgsql-bugs@lists.postgresql.org"
+#define PACKAGE_URL "https://www.postgresql.org/"
+#define CONFIGURE_ARGS " 'LDFLAGS=-lyaml'"
+#define PG_MAJORVERSION "16"
+#define PG_MAJORVERSION_NUM 16
+#define PG_MINORVERSION_NUM 0
+#define PG_VERSION "16devel"
+#define DEF_PGPORT 5432
+#define DEF_PGPORT_STR "5432"
+#define BLCKSZ 8192
+#define RELSEG_SIZE 131072
+#define XLOG_BLCKSZ 8192
+#define HAVE_VISIBILITY_ATTRIBUTE 1
+#define DLSUFFIX ".so"
+#define ENABLE_THREAD_SAFETY 1
+#define PG_KRB_SRVNAM "postgres"
+#define STDC_HEADERS 1
+#define HAVE_SYS_TYPES_H 1
+#define HAVE_SYS_STAT_H 1
+#define HAVE_STDLIB_H 1
+#define HAVE_STRING_H 1
+#define HAVE_MEMORY_H 1
+#define HAVE_STRINGS_H 1
+#define HAVE_INTTYPES_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_UNISTD_H 1
+#define HAVE_PTHREAD_PRIO_INHERIT 1
+#define HAVE_PTHREAD 1
+#define HAVE_STRERROR_R 1
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}

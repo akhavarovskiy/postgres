@@ -47,6 +47,7 @@ yaml_in(PG_FUNCTION_ARGS)
 	PG_RETURN_TEXT_P(result);
 }
 
+PG_FUNCTION_INFO_V1(yaml_in);
 /*
  * Output.
  */
@@ -58,6 +59,7 @@ yaml_out(PG_FUNCTION_ARGS)
 
 	PG_RETURN_CSTRING(TextDatumGetCString(txt));
 }
+PG_FUNCTION_INFO_V1(yaml_out);
 
 /*
  * Binary send.
@@ -72,6 +74,7 @@ yaml_send(PG_FUNCTION_ARGS)
 	pq_sendtext(&buf, VARDATA_ANY(t), VARSIZE_ANY_EXHDR(t));
 	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
 }
+PG_FUNCTION_INFO_V1(yaml_send);
 
 /*
  * Binary receive.
@@ -87,3 +90,4 @@ yaml_recv(PG_FUNCTION_ARGS)
 
 	PG_RETURN_TEXT_P(cstring_to_text_with_len(str, nbytes));
 }
+PG_FUNCTION_INFO_V1(yaml_recv);
