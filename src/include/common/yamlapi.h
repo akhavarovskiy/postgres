@@ -16,6 +16,10 @@
 
 #include <yaml.h>
 
+/** Yaml Error types are copies of types in yaml.h */
+typedef yaml_token_type_t YamlTokenType;
+typedef yaml_error_type_t YamlParseErrorType;
+
 typedef struct YamlContext {
   yaml_parser_t   parser;
   yaml_document_t document;
@@ -25,6 +29,18 @@ typedef struct YamlContext {
 } YamlContext;
 
 
+/*
+ * pg_parse_yaml
+ *
+ * Publicly visible entry point for the YAML parser.
+ *
+ * lex is a lexing context, set up for the YAML to be processed by calling
+ * makeYAMLContext(). sem is a structure of function pointers to semantic
+ * action routines to be called at appropriate spots during parsing, and a
+ * pointer to a state object to be passed to those routines.
+ */
+
+YamlParseErrorType pg_parse_yaml(YamlContext *context);
 /*
  * makeYamlContextCstringLen
  *

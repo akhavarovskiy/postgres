@@ -18,6 +18,7 @@ extern void pg_parse_yaml_or_ereport(YamlContext *yamlContext);
 
 extern YamlContext *makeYamlContext(text *yaml, bool need_escapes);
 
-extern  void yaml_ereport_error(const char * error);
+extern void yaml_ereport_error(YamlParseErrorType error, YamlContext* context);
+
 
 #endif

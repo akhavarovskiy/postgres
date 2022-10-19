@@ -39,11 +39,29 @@
 /*
  * Report a YAML error.
  */
-void yaml_ereport_error(const char * error)
+void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
 {
-  ereport(ERROR,
-      (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-        errmsg("invalid input syntax for type %s : %s", "yaml", error)));
+  ereport(LOG,(errmsg("YAML Error code : %d\n", error)));
+  switch(error)
+  {
+    case YAML_NO_ERROR:
+      return;
+
+    case YAML_READER_ERROR:
+    case YAML_SCANNER_ERROR:
+    case YAML_PARSER_ERROR:
+    case YAML_COMPOSER_ERROR:
+      ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+            errmsg("Invalid input syntax for type YAML : %s", context->parser.problem)));
+      break;
+
+    default:
+      ereport(ERROR,
+        (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+            errmsg("YAML parser is in an invalid state : %s", context->parser.problem)));
+      break;
+  }
 }
 
 /*
@@ -56,34 +74,11 @@ void yaml_ereport_error(const char * error)
 void
 pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 {
-  yaml_event_t      event;
-  yaml_event_type_t event_type;
-
-  if(!yaml_parser_initialize(&(yamlContext->parser)))
-    ereport(ERROR, (errmsg("Could not create parser for YAML")));
-
-  yaml_parser_set_input_string(
-    &yamlContext->parser,
-    (const unsigned char*)yamlContext->input,
-    yamlContext->input_length
-  );
-
-  ereport(LOG, (errmsg("YAML: %s\n", yamlContext->input)));
-  ereport(LOG, (errmsg("YAML Length: %d\n", yamlContext->input_length)));
-
-  do {
-      if (!yaml_parser_parse(&(yamlContext->parser), &event)) {
-          yaml_ereport_error(yamlContext->parser.problem);
-      }
-      event_type = event.type;
-      ereport(LOG, (errmsg("EVENT TYPE: %d\n", event_type)));
-
-      yaml_event_delete(&event);
-  }
-  while (event_type != YAML_STREAM_END_EVENT);
-
-  yaml_parser_delete(&(yamlContext->parser));
-  ereport(LOG, (errmsg("yaml_parser_load() said document was valid")));
+    YamlParseErrorType result;
+    result = pg_parse_yaml(yamlContext);
+    if (result != YAML_NO_ERROR) {
+      yaml_ereport_error(result, yamlContext);
+    }
 }
 
 /*
@@ -95,12 +90,39 @@ pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 YamlContext *
 makeYamlContext(text *yaml, bool need_escapes)
 {
-	return makeYamlContextCstringLen(
+  return makeYamlContextCstringLen(
                     VARDATA_ANY(yaml),
-										VARSIZE_ANY_EXHDR(yaml),
-										GetDatabaseEncoding(),
-										need_escapes);
+                    VARSIZE_ANY_EXHDR(yaml),
+                    GetDatabaseEncoding(),
+                    need_escapes);
 }
 
 
 
+text * yaml_get_sub_tree(YamlContext * context, char * path)
+{
+
+}
+/*
+ * yaml getter functions
+ * these implement the -> ->> #> and #>> operators
+ * and the json{b?}_extract_path*(json, text, ...) functions
+ */
+
+
+Datum
+yaml_object_field(PG_FUNCTION_ARGS)
+{
+	text	   *yaml = PG_GETARG_TEXT_PP(0);
+	text	   *path = PG_GETARG_TEXT_PP(1);
+	char	   *pathstr = text_to_cstring(path);
+	text	   *result;
+
+  YamlContext * yamlContext = makeYamlContext(yaml, false);
+  pg_parse_yaml_or_ereport(yamlContext);
+
+	if (result != NULL)
+		PG_RETURN_TEXT_P(result);
+	else
+		PG_RETURN_NULL();
+}

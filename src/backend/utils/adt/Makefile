@@ -120,8 +120,7 @@ OBJS = \
 	xid8funcs.o \
 	xml.o \
 	yaml.o \
-	yamlfunc.o \
-	yamlapi.o
+	yamlfunc.o
 
 
 # See notes in src/backend/parser/Makefile about the following two rules
