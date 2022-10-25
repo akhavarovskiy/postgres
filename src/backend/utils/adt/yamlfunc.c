@@ -13,7 +13,7 @@
  */
 #include "postgres.h"
 #include <yaml.h>
-
+#include <assert.h>
 #include "access/htup_details.h"
 #include "catalog/pg_type.h"
 #include "common/jsonapi.h"
@@ -53,7 +53,7 @@ void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
     case YAML_COMPOSER_ERROR:
       ereport(ERROR,
         (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-            errmsg("Invalid input syntax for type YAML : %s", context->parser.problem)));
+            errmsg("%s : %s", context->parser.problem, context->parser.context)));
       break;
 
     default:
@@ -101,6 +101,96 @@ makeYamlContext(text *yaml, bool need_escapes)
 
 text * yaml_get_sub_tree(YamlContext * context, char * path)
 {
+	// yaml_token_t token;
+  // int n;
+  // int status;
+  // int starting_column;
+
+  // // Get the initial token
+  // status = yaml_parser_scan(&(context->parser), &token);
+  // if (!status) {
+  //   yaml_ereport_error(context->parser.error, context);
+  // }
+  // // Get the initial colum index
+  // starting_column = token.start_mark.column;
+
+  // // Loop through the document ignoring key values
+  // while(token.type != YAML_STREAM_END_TOKEN)
+  // {
+  //   if(starting_column != token.start_mark.column)
+  //     continue;
+
+  //   switch(token.type)
+  //   {
+  //     case YAML_KEY_TOKEN:
+  //     {
+  //       // Delete the current token
+  //       yaml_token_delete(&token);
+
+  //       // Get the next token (SCALAR)
+  //       status = yaml_parser_scan(&(context->parser), &token);
+  //       if (!status) {
+  //         yaml_ereport_error(context->parser.error, context);
+  //       }
+  //       n = strncmp(path, (char*)token.data.scalar.value, token.data.scalar.length);
+  //       if(n == 0) {
+  //         return cstring_to_text_with_len("Key Found", strlen("Key Found"));
+  //       }
+  //       break;
+  //     }
+  //     default:
+  //       break;
+  //   }
+  //   if(token.type != YAML_STREAM_END_TOKEN) {
+  //     yaml_token_delete(&token);
+  //     status = yaml_parser_scan(&(context->parser), &token);
+  //     if (!status) {
+  //       yaml_ereport_error(context->parser.error, context);
+  //     }
+  //   }
+  // }
+  // yaml_parser_delete(&(context->parser));
+	// return cstring_to_text_with_len("Key Not Found", strlen("Key Not Found"));
+
+  yaml_token_t token;
+  int n;
+  int status;
+  int starting_column = -1;
+
+  do {
+    yaml_parser_scan(&(context->parser), &token);
+
+    if(starting_column == -1)
+      starting_column = token.start_mark.column;
+
+    if(starting_column != token.start_mark.column)
+      continue;
+
+    switch(token.type)
+    {
+    case YAML_KEY_TOKEN:
+		{
+      /** If we are next to a key token the next value is a scalar */
+			yaml_parser_scan(&(context->parser), &token);
+			assert(token.type == YAML_SCALAR_TOKEN);
+
+      if(token.data.scalar.length != strlen(path)) {
+        continue;
+      }
+      n = strncmp(path, (char*)token.data.scalar.value, token.data.scalar.length);
+      if(n == 0) {
+        yaml_token_delete(&token);
+        return cstring_to_text_with_len("Key Found", strlen("Key Found"));
+      }
+			break;
+		}
+    default: break;
+    }
+    if(token.type != YAML_STREAM_END_TOKEN)
+      yaml_token_delete(&token);
+  } while(token.type != YAML_STREAM_END_TOKEN);
+  yaml_token_delete(&token);
+  return cstring_to_text_with_len("Key Not Found", strlen("Key Not Found"));
 
 }
 /*
@@ -119,7 +209,7 @@ yaml_object_field(PG_FUNCTION_ARGS)
 	text	   *result;
 
   YamlContext * yamlContext = makeYamlContext(yaml, false);
-  pg_parse_yaml_or_ereport(yamlContext);
+  result = yaml_get_sub_tree(yamlContext, pathstr);
 
 	if (result != NULL)
 		PG_RETURN_TEXT_P(result);
