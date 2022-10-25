@@ -44,9 +44,6 @@ void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
   ereport(LOG,(errmsg("YAML Error code : %d\n", error)));
   switch(error)
   {
-    case YAML_NO_ERROR:
-      return;
-
     case YAML_READER_ERROR:
     case YAML_SCANNER_ERROR:
     case YAML_PARSER_ERROR:
@@ -74,11 +71,10 @@ void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
 void
 pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 {
-    YamlParseErrorType result;
-    result = pg_parse_yaml(yamlContext);
-    if (result != YAML_NO_ERROR) {
-      yaml_ereport_error(result, yamlContext);
-    }
+    YamlParseErrorType err;
+    err = pg_parse_yaml(yamlContext);
+    if (err)
+      yaml_ereport_error(err, yamlContext);
 }
 
 /*
