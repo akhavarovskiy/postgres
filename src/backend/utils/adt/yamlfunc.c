@@ -41,24 +41,22 @@
  */
 void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
 {
-  ereport(LOG,(errmsg("YAML Error code : %d\n", error)));
-  switch(error)
-  {
-    case YAML_READER_ERROR:
-    case YAML_SCANNER_ERROR:
-    case YAML_PARSER_ERROR:
-    case YAML_COMPOSER_ERROR:
-      ereport(ERROR,
-        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-            errmsg("%s : %s", context->parser.problem, context->parser.context)));
-      break;
-
-    default:
-      ereport(ERROR,
-        (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
-            errmsg("YAML parser is in an invalid state : %s", context->parser.problem)));
-      break;
-  }
+	ereport(LOG,(errmsg("YAML Error code : %d\n", error)));
+ 	switch(error) {
+	case YAML_READER_ERROR:
+	case YAML_SCANNER_ERROR:
+	case YAML_PARSER_ERROR:
+	case YAML_COMPOSER_ERROR:
+		ereport(ERROR,
+			(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+			errmsg("%s : %s", context->parser.problem, context->parser.context)));
+		break;
+	default:
+		ereport(ERROR,
+			(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+			errmsg("YAML parser is in an invalid state : %s", context->parser.problem)));
+		break;
+	}
 }
 
 /*
@@ -71,10 +69,10 @@ void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
 void
 pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 {
-    YamlParseErrorType err;
-    err = pg_parse_yaml(yamlContext);
-    if (err)
-      yaml_ereport_error(err, yamlContext);
+	YamlParseErrorType err;
+	err = pg_parse_yaml(yamlContext);
+	if (err)
+		yaml_ereport_error(err, yamlContext);
 }
 
 /*
@@ -86,18 +84,18 @@ pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 YamlContext *
 makeYamlContext(text *yaml, bool need_escapes)
 {
-  return makeYamlContextCstringLen(
-                    VARDATA_ANY(yaml),
-                    VARSIZE_ANY_EXHDR(yaml),
-                    GetDatabaseEncoding(),
-                    need_escapes);
+	return makeYamlContextCstringLen(
+		VARDATA_ANY(yaml),
+		VARSIZE_ANY_EXHDR(yaml),
+		GetDatabaseEncoding(),
+		need_escapes);
 }
 
 
 
 text * yaml_get_sub_tree(YamlContext * context, char * path)
 {
-	// yaml_token_t token;
+  // yaml_token_t token;
   // int n;
   // int status;
   // int starting_column;
@@ -148,54 +146,57 @@ text * yaml_get_sub_tree(YamlContext * context, char * path)
   // yaml_parser_delete(&(context->parser));
 	// return cstring_to_text_with_len("Key Not Found", strlen("Key Not Found"));
 
-  yaml_token_t token;
-  int n;
-  int status;
-  int starting_column = -1;
+	yaml_token_t token;
+	int n;
+	int status;
+	int starting_column = -1;
+	
+	do {
+		yaml_parser_scan(&(context->parser), &token);
 
-  do {
-    yaml_parser_scan(&(context->parser), &token);
+		if(starting_column == -1)
+			starting_column = token.start_mark.column;
 
-    if(starting_column == -1)
-      starting_column = token.start_mark.column;
+		if(starting_column != token.start_mark.column)
+			continue;
 
-    if(starting_column != token.start_mark.column)
-      continue;
-
-    switch(token.type)
-    {
-    case YAML_KEY_TOKEN:
+		switch(token.type) {
+		case YAML_KEY_TOKEN:
 		{
-      /** If we are next to a key token the next value is a scalar */
+			/* If we are next to a key token the next value is a scalar */
 			yaml_parser_scan(&(context->parser), &token);
 			assert(token.type == YAML_SCALAR_TOKEN);
 
-      if(token.data.scalar.length != strlen(path)) {
-        continue;
-      }
-      n = strncmp(path, (char*)token.data.scalar.value, token.data.scalar.length);
-      if(n == 0) {
-        yaml_token_delete(&token);
-        return cstring_to_text_with_len("Key Found", strlen("Key Found"));
-      }
+			if(token.data.scalar.length != strlen(path))
+				continue;
+
+			n = strncmp(path, (char*)token.data.scalar.value, token.data.scalar.length);
+      			
+			if(n == 0) {
+				yaml_token_delete(&token);
+				return cstring_to_text_with_len("Key Found", strlen("Key Found"));
+			}
 			break;
 		}
-    default: break;
-    }
-    if(token.type != YAML_STREAM_END_TOKEN)
-      yaml_token_delete(&token);
-  } while(token.type != YAML_STREAM_END_TOKEN);
-  yaml_token_delete(&token);
-  return cstring_to_text_with_len("Key Not Found", strlen("Key Not Found"));
+		default:
+			break;
+		}
+		
+		if(token.type != YAML_STREAM_END_TOKEN)
+			yaml_token_delete(&token);
 
+	} while(token.type != YAML_STREAM_END_TOKEN);
+
+	yaml_token_delete(&token);
+	
+	return cstring_to_text_with_len("Key Not Found", strlen("Key Not Found"));
 }
+
 /*
  * yaml getter functions
  * these implement the -> ->> #> and #>> operators
  * and the json{b?}_extract_path*(json, text, ...) functions
  */
-
-
 Datum
 yaml_object_field(PG_FUNCTION_ARGS)
 {
@@ -204,8 +205,8 @@ yaml_object_field(PG_FUNCTION_ARGS)
 	char	   *pathstr = text_to_cstring(path);
 	text	   *result;
 
-  YamlContext * yamlContext = makeYamlContext(yaml, false);
-  result = yaml_get_sub_tree(yamlContext, pathstr);
+	YamlContext * yamlContext = makeYamlContext(yaml, false);
+	result = yaml_get_sub_tree(yamlContext, pathstr);
 
 	if (result != NULL)
 		PG_RETURN_TEXT_P(result);

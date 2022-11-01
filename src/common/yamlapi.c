@@ -35,13 +35,11 @@ makeYamlContextCstringLen(char *yaml, int len, int encoding, bool need_escapes)
 	yamlContext->input_length = len;
 
 	if(!yaml_parser_initialize(&(yamlContext->parser)))
-    ereport(ERROR, (errmsg("Could not create parser for YAML")));
+		ereport(ERROR, (errmsg("Could not create parser for YAML")));
 
-  yaml_parser_set_input_string(
-    &yamlContext->parser,
-    (const unsigned char*)yamlContext->input,
-    yamlContext->input_length
-  );
+	yaml_parser_set_input_string(&yamlContext->parser,
+				     (const unsigned char*)yamlContext->input,
+				     yamlContext->input_length);
 	return yamlContext;
 }
 
@@ -60,16 +58,17 @@ YamlParseErrorType
 pg_parse_yaml(YamlContext *context)
 {
 	yaml_event_t      event;
-  yaml_event_type_t event_type;
-  do {
-      int status = yaml_parser_parse(&(context->parser), &event);
-      if (!status) {
-        return context->parser.error;
-      }
-      event_type = event.type;
-      yaml_event_delete(&event);
-  }
-  while (event_type != YAML_STREAM_END_EVENT);
-  yaml_parser_delete(&(context->parser));
+	yaml_event_type_t event_type;
+	
+	do {
+		int status = yaml_parser_parse(&(context->parser), &event);
+		if !status
+			return context->parser.error;
+
+		event_type = event.type;
+		yaml_event_delete(&event);
+	} while (event_type != YAML_STREAM_END_EVENT);
+
+	yaml_parser_delete(&(context->parser));
 	return YAML_NO_ERROR;
 }
