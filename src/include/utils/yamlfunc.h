@@ -20,6 +20,6 @@ extern YamlContext *makeYamlContext(text *yaml, bool need_escapes);
 
 extern void yaml_ereport_error(YamlParseErrorType error, YamlContext* context);
 
-extern text * yaml_get_sub_tree(YamlContext * context, char * path);
+extern text * yaml_get_sub_structure(YamlContext * context, char * path);
 
 #endif
