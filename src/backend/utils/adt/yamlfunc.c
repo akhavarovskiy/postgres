@@ -41,27 +41,22 @@
  */
 void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
 {
-  ereport(LOG,(errmsg("YAML Error code : %d\n", error)));
-  switch(error)
-  {
-    case YAML_NO_ERROR:
-      return;
-
-    case YAML_READER_ERROR:
-    case YAML_SCANNER_ERROR:
-    case YAML_PARSER_ERROR:
-    case YAML_COMPOSER_ERROR:
-      ereport(ERROR,
-        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-            errmsg("%s : %s", context->parser.problem, context->parser.context)));
-      break;
-
-    default:
-      ereport(ERROR,
-        (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
-            errmsg("YAML parser is in an invalid state : %s", context->parser.problem)));
-      break;
-  }
+	ereport(LOG,(errmsg("YAML Error code : %d\n", error)));
+ 	switch(error) {
+	case YAML_READER_ERROR:
+	case YAML_SCANNER_ERROR:
+	case YAML_PARSER_ERROR:
+	case YAML_COMPOSER_ERROR:
+		ereport(ERROR,
+			(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+			errmsg("%s : %s", context->parser.problem, context->parser.context)));
+		break;
+	default:
+		ereport(ERROR,
+			(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+			errmsg("YAML parser is in an invalid state : %s", context->parser.problem)));
+		break;
+	}
 }
 
 /*
@@ -74,11 +69,10 @@ void yaml_ereport_error(YamlParseErrorType error, YamlContext* context)
 void
 pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 {
-    YamlParseErrorType result;
-    result = pg_parse_yaml(yamlContext);
-    if (result != YAML_NO_ERROR) {
-      yaml_ereport_error(result, yamlContext);
-    }
+	YamlParseErrorType err;
+	err = pg_parse_yaml(yamlContext);
+	if (err)
+		yaml_ereport_error(err, yamlContext);
 }
 
 /*
@@ -90,11 +84,11 @@ pg_parse_yaml_or_ereport(YamlContext *yamlContext)
 YamlContext *
 makeYamlContext(text *yaml, bool need_escapes)
 {
-  return makeYamlContextCstringLen(
-                    VARDATA_ANY(yaml),
-                    VARSIZE_ANY_EXHDR(yaml),
-                    GetDatabaseEncoding(),
-                    need_escapes);
+	return makeYamlContextCstringLen(
+		VARDATA_ANY(yaml),
+		VARSIZE_ANY_EXHDR(yaml),
+		GetDatabaseEncoding(),
+		need_escapes);
 }
 
 
@@ -375,8 +369,6 @@ text * yaml_get_sub_tree(YamlContext * context, char * path)
  * these implement the -> ->> #> and #>> operators
  * and the json{b?}_extract_path*(json, text, ...) functions
  */
-
-
 Datum
 yaml_object_field(PG_FUNCTION_ARGS)
 {
@@ -387,7 +379,7 @@ yaml_object_field(PG_FUNCTION_ARGS)
   int       key_found;
 
   YamlContext * yamlContext = makeYamlContext(yaml, false);
-
+  
   key_found = yaml_find_key_on_top_scope(yamlContext, pathstr);
   if(key_found) {
     result = yaml_get_sub_tree(yamlContext, pathstr);

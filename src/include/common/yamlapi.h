@@ -21,10 +21,10 @@ typedef yaml_token_type_t YamlTokenType;
 typedef yaml_error_type_t YamlParseErrorType;
 
 typedef struct YamlContext {
-  yaml_parser_t   parser;
-  yaml_document_t document;
-  yaml_token_t    token;
-  char *          input;
+	yaml_parser_t   parser;
+	yaml_document_t document;
+	yaml_token_t    token;
+	char *          input;
 	int             input_length;
 } YamlContext;
 
@@ -39,7 +39,6 @@ typedef struct YamlContext {
  * action routines to be called at appropriate spots during parsing, and a
  * pointer to a state object to be passed to those routines.
  */
-
 YamlParseErrorType pg_parse_yaml(YamlContext *context);
 /*
  * makeYamlContextCstringLen
