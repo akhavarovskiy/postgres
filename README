@@ -29,6 +29,8 @@ web site located at https://www.postgresql.org/.
 Building the database
 =====================================
 ./configure LDFLAGS="-lyaml"
+#For Mac
+./configure CFLAGS="-I/opt/homebrew/Cellar/libyaml/0.2.5/include -L/opt/homebrew/Cellar/libyaml/0.2.5/lib" LDFALGS="-lyaml"
 make
 su
 make install
