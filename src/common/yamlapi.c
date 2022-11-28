@@ -59,10 +59,10 @@ pg_parse_yaml(YamlContext *context)
 {
 	yaml_event_t      event;
 	yaml_event_type_t event_type;
-	
+
 	do {
 		int status = yaml_parser_parse(&(context->parser), &event);
-		if !status
+		if (!status)
 			return context->parser.error;
 
 		event_type = event.type;

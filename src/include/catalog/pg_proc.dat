@@ -8923,7 +8923,9 @@
 { oid => '3968', descr => 'get the type of a json value',
   proname => 'json_typeof', prorettype => 'text', proargtypes => 'json',
   prosrc => 'json_typeof' },
-
+{ oid => '10330', descr => 'get the type of a yaml value',
+  proname => 'yaml_typeof', prorettype => 'text', proargtypes => 'yaml',
+  prosrc => 'yaml_typeof' },
 # uuid
 { oid => '2952', descr => 'I/O',
   proname => 'uuid_in', prorettype => 'uuid', proargtypes => 'cstring',

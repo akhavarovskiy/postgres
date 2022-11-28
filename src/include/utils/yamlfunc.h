@@ -22,4 +22,6 @@ extern void yaml_ereport_error(YamlParseErrorType error, YamlContext* context);
 
 extern text * yaml_get_sub_structure(YamlContext * context, char * path);
 
+extern text *yaml_get_object_type(YamlContext *context);
+
 #endif

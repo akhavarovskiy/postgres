@@ -91,3 +91,20 @@ yaml_recv(PG_FUNCTION_ARGS)
 	PG_RETURN_TEXT_P(cstring_to_text_with_len(str, nbytes));
 }
 PG_FUNCTION_INFO_V1(yaml_recv);
+
+
+/** Get the type YAML */
+Datum
+yaml_typeof(PG_FUNCTION_ARGS)
+{
+	if (PG_ARGISNULL(0))
+		PG_RETURN_NULL();
+
+	text	   *yaml;
+	yaml = PG_GETARG_TEXT_PP(0);
+
+	YamlContext* YamlContext = makeYamlContext(yaml, false);
+	text* r = yaml_get_object_type(YamlContext);
+
+	PG_RETURN_TEXT_P(r);
+}

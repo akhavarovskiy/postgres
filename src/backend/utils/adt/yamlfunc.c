@@ -91,64 +91,92 @@ makeYamlContext(text *yaml, bool need_escapes)
 		need_escapes);
 }
 
+text *yaml_get_object_type(YamlContext *context)
+{
+    yaml_event_t event;
+    assert(yaml_parser_parse(&(context->parser), &event) && event.type == YAML_STREAM_START_EVENT);
+    yaml_event_delete(&event);
+    assert(yaml_parser_parse(&(context->parser), &event) && event.type == YAML_DOCUMENT_START_EVENT);
+    yaml_event_delete(&event);
+    /* Parsing the first object will give us the root object type */
+    yaml_parser_parse(&(context->parser), &event);
+
+    switch (event.type)
+    {
+    case YAML_SCALAR_EVENT:
+        yaml_event_delete(&event);
+        return cstring_to_text("scalar");
+
+    case YAML_SEQUENCE_START_EVENT:
+        yaml_event_delete(&event);
+        return cstring_to_text("sequence");
+
+    case YAML_MAPPING_START_EVENT:
+        yaml_event_delete(&event);
+        return cstring_to_text("mapping");
+
+    default:
+        return cstring_to_text("Unknown Type");
+    }
+}
 
 static int
 yaml_find_key_on_top_scope(YamlContext *yamlContext, const char *key)
 {
-  int n, done = 0, scope = -1;
-  unsigned int kv_toggle = 0; // Key = 0, Value = 1
+    int n, done = 0, scope = -1;
+    unsigned int kv_toggle = 0; // Key = 0, Value = 1
 
-  while(!done) {
-      yaml_event_t event;
-      if (!yaml_parser_parse(&(yamlContext->parser), &event))
-          return 0;
+    while(!done) {
+        yaml_event_t event;
+        if (!yaml_parser_parse(&(yamlContext->parser), &event))
+            return 0;
 
-      switch (event.type) {
-      case YAML_NO_EVENT:
-          break;
-      case YAML_STREAM_START_EVENT:
-          break;
-      case YAML_STREAM_END_EVENT:
-          done = 1;
-          break;
-      case YAML_DOCUMENT_START_EVENT:
-          break;
-      case YAML_DOCUMENT_END_EVENT:
-          done = 1;
-          break;
-      case YAML_SEQUENCE_START_EVENT:
-          scope++;
-          break;
-      case YAML_SEQUENCE_END_EVENT:
-          scope--;
-          kv_toggle = 0;
-          break;
-      case YAML_MAPPING_START_EVENT:
-          scope++;
-          break;
-      case YAML_MAPPING_END_EVENT:
-          scope--;
-          kv_toggle = 0;
-          break;
-      case YAML_ALIAS_EVENT:
-          break;
-      case YAML_SCALAR_EVENT:
-          if(scope != 0)
-              continue;
-          if(kv_toggle == 0) {
-              kv_toggle = !kv_toggle;
-              n = strncmp((const char*)event.data.scalar.value, key, strlen(key));
-              if(n == 0) {
-                  return 1;
-              }
-          } else {
-              kv_toggle = 0;
-          }
-          break;
-      }
-      yaml_event_delete(&event);
-  }
-  return 0;
+        switch (event.type) {
+        case YAML_NO_EVENT:
+            break;
+        case YAML_STREAM_START_EVENT:
+            break;
+        case YAML_STREAM_END_EVENT:
+            done = 1;
+            break;
+        case YAML_DOCUMENT_START_EVENT:
+            break;
+        case YAML_DOCUMENT_END_EVENT:
+            done = 1;
+            break;
+        case YAML_SEQUENCE_START_EVENT:
+            scope++;
+            break;
+        case YAML_SEQUENCE_END_EVENT:
+            scope--;
+            kv_toggle = 0;
+            break;
+        case YAML_MAPPING_START_EVENT:
+            scope++;
+            break;
+        case YAML_MAPPING_END_EVENT:
+            scope--;
+            kv_toggle = 0;
+            break;
+        case YAML_ALIAS_EVENT:
+            break;
+        case YAML_SCALAR_EVENT:
+            if(scope != 0)
+                continue;
+            if(kv_toggle == 0) {
+                kv_toggle = !kv_toggle;
+                n = strncmp((const char*)event.data.scalar.value, key, strlen(key));
+                if(n == 0) {
+                    return 1;
+                }
+            } else {
+                kv_toggle = 0;
+            }
+            break;
+        }
+        yaml_event_delete(&event);
+    }
+    return 0;
 }
 
 static void print_emitter_error(yaml_emitter_t* emitter, int line)
@@ -360,7 +388,7 @@ text * yaml_get_sub_tree(YamlContext * context, char * path)
     yaml_emitter_delete(&emitter);
 
     if(size_written == 0)
-      return NULL;
+        return NULL;
     return cstring_to_text_with_len((const char*)(&buffer[14]), size_written - 14);
 }
 
@@ -372,20 +400,20 @@ text * yaml_get_sub_tree(YamlContext * context, char * path)
 Datum
 yaml_object_field(PG_FUNCTION_ARGS)
 {
-	text	   *yaml = PG_GETARG_TEXT_PP(0);
-	text	   *path = PG_GETARG_TEXT_PP(1);
-	char	   *pathstr = text_to_cstring(path);
-	text	   *result = NULL;
-  int       key_found;
+    text   *yaml = PG_GETARG_TEXT_PP(0);
+    text   *path = PG_GETARG_TEXT_PP(1);
+    char   *pathstr = text_to_cstring(path);
+    text   *result = NULL;
+    int     key_found;
 
-  YamlContext * yamlContext = makeYamlContext(yaml, false);
-  
-  key_found = yaml_find_key_on_top_scope(yamlContext, pathstr);
-  if(key_found) {
-    result = yaml_get_sub_tree(yamlContext, pathstr);
-  }
-	if (result != NULL)
-		PG_RETURN_TEXT_P(result);
-	else
-		PG_RETURN_NULL();
+    YamlContext * yamlContext = makeYamlContext(yaml, false);
+
+    key_found = yaml_find_key_on_top_scope(yamlContext, pathstr);
+    if(key_found) {
+        result = yaml_get_sub_tree(yamlContext, pathstr);
+    }
+    if (result != NULL)
+        PG_RETURN_TEXT_P(result);
+    else
+        PG_RETURN_NULL();
 }
