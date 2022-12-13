@@ -25,9 +25,25 @@ typedef struct YamlContext {
 	yaml_document_t document;
 	yaml_token_t    token;
 	char *          input;
-	int             input_length;
-} YamlContext;
+	unsigned int    input_length;
+	// Once the file is parsed all the associated
+	// events are stored in order
+	yaml_event_t**  events;
+	unsigned int    events_capacity;
+	unsigned int    events_length;
+}
+YamlContext;
 
+
+/*
+ * makeYamlContextCstringLen
+ *
+ * Constructor, with or without StringInfo object for de-escaped lexemes.
+ *
+ * Without is better as it makes the processing faster, so only make one
+ * if really required.
+ */
+extern YamlContext * makeYamlContextCstringLen(char *yaml, int len, int encoding, bool need_escapes);
 
 /*
  * pg_parse_yaml
@@ -40,14 +56,5 @@ typedef struct YamlContext {
  * pointer to a state object to be passed to those routines.
  */
 YamlParseErrorType pg_parse_yaml(YamlContext *context);
-/*
- * makeYamlContextCstringLen
- *
- * Constructor, with or without StringInfo object for de-escaped lexemes.
- *
- * Without is better as it makes the processing faster, so only make one
- * if really required.
- */
-extern YamlContext * makeYamlContextCstringLen(char *yaml, int len, int encoding, bool need_escapes);
 
 #endif /* YAMLAPI_H */

@@ -1,10 +1,7 @@
 /*-------------------------------------------------------------------------
  *
  * yamlfunc.h
- *	  Declarations for JSON data type support.
- *
- * Portions Copyright (c) 1996-2022, PostgreSQL Global Development Group
- * Portions Copyright (c) 1994, Regents of the University of California
+ *	  Declarations for YAML data type support.
  *
  * src/include/utils/yamlfunc.h
  *
@@ -20,8 +17,11 @@ extern YamlContext *makeYamlContext(text *yaml, bool need_escapes);
 
 extern void yaml_ereport_error(YamlParseErrorType error, YamlContext* context);
 
-extern text * yaml_get_sub_structure(YamlContext * context, char * path);
+extern text * yaml_get_sub_tree(YamlContext * context, int location);
 
 extern text *yaml_get_object_type(YamlContext *context);
+
+extern int yaml_count_array_size(YamlContext *context);
+
 
 #endif
