@@ -112,8 +112,10 @@ yaml_typeof(PG_FUNCTION_ARGS)
 	context = makeYamlContext(yaml, false);
 	pg_parse_yaml_or_ereport(context);
 
+	text * type = yaml_get_object_type(context);
+	cleanYamlContext(context);
 	PG_RETURN_TEXT_P(
-		yaml_get_object_type(context)
+		type
 	);
 }
 

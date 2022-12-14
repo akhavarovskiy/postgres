@@ -578,6 +578,7 @@ yaml_sequence_elements(PG_FUNCTION_ARGS)
                 break;
         }
     }
+    cleanYamlContext(context);
     PG_RETURN_NULL();
 }
 
