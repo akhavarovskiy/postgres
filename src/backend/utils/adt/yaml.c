@@ -101,13 +101,14 @@ yaml_recv(PG_FUNCTION_ARGS)
 Datum
 yaml_typeof(PG_FUNCTION_ARGS)
 {
+	text	   *yaml;
+	YamlContext* context;
 	if (PG_ARGISNULL(0))
 		PG_RETURN_NULL();
 
-	text	   *yaml;
 	yaml = PG_GETARG_TEXT_PP(0);
 
-	YamlContext* context = makeYamlContext(yaml, false);
+	context = makeYamlContext(yaml, false);
 	pg_parse_yaml_or_ereport(context);
 
 	PG_RETURN_TEXT_P(
@@ -118,13 +119,14 @@ yaml_typeof(PG_FUNCTION_ARGS)
 Datum
 yaml_sequence_length(PG_FUNCTION_ARGS)
 {
+	text	   *yaml;
+	YamlContext* context;
 	if (PG_ARGISNULL(0))
 		PG_RETURN_NULL();
 
-	text	   *yaml;
 	yaml = PG_GETARG_TEXT_PP(0);
 
-	YamlContext* context = makeYamlContext(yaml, false);
+	context = makeYamlContext(yaml, false);
 	pg_parse_yaml_or_ereport(context);
 
 	text* type = yaml_get_object_type(context);
@@ -150,11 +152,7 @@ composite_to_yaml(Datum composite, StringInfo result, bool use_line_feeds)
 	HeapTupleData tmptup,
 			   *tuple;
 	int			i;
-	bool		needsep = false;
 	bool		typisvarlena;
-	const char *sep;
-
-	sep = use_line_feeds ? ",\n " : ",";
 
 	td = DatumGetHeapTupleHeader(composite);
 
@@ -174,6 +172,7 @@ composite_to_yaml(Datum composite, StringInfo result, bool use_line_feeds)
 		bool		isnull;
 		bool    needs_quotes = false;
 		char	   *attname;
+		Oid outfuncoid;
 		// JsonTypeCategory tcategory;
 		// Oid	 outfuncoid;
 		Form_pg_attribute att = TupleDescAttr(tupdesc, i);
@@ -181,7 +180,6 @@ composite_to_yaml(Datum composite, StringInfo result, bool use_line_feeds)
 		if (att->attisdropped)
 			continue;
 
-		Oid outfuncoid;
 		Oid bstype = getBaseType(att->atttypid);
 		getTypeOutputInfo(bstype, &outfuncoid, &typisvarlena);
 
@@ -198,7 +196,7 @@ composite_to_yaml(Datum composite, StringInfo result, bool use_line_feeds)
 		{
 		case OIDOID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%u", DatumGetObjectId(val));
+			snprintf(value, 128, "%u", DatumGetObjectId(val));
 			break;
 		case NAMEOID:
 			needs_quotes = true;
@@ -211,32 +209,32 @@ composite_to_yaml(Datum composite, StringInfo result, bool use_line_feeds)
 		case CHAROID:
 			value = (char *)palloc0(2);
 			needs_quotes = true;
-			sprintf(value, "%c", DatumGetChar(val));
+			snprintf(value, 2, "%c", DatumGetChar(val));
 			break;
 		case REGPROCOID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%u", DatumGetObjectId(val));
+			snprintf(value, 128, "%u", DatumGetObjectId(val));
 			break;
 		case BOOLOID:
 			value = DatumGetBool(val) ? "true" : "false";
 			break;
 		case INT2OID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%d", DatumGetInt16(val));
+			snprintf(value, 128, "%d", DatumGetInt16(val));
 			break;
 		case INT4OID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%d", DatumGetInt32(val));
+			snprintf(value, 128, "%d", DatumGetInt32(val));
 			break;
 		case INT8OID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%ld", DatumGetInt64(val));
+			snprintf(value, 128, "%ld", DatumGetInt64(val));
 		case FLOAT4OID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%f", DatumGetFloat4(val));
+			snprintf(value, 128, "%f", DatumGetFloat4(val));
 		case FLOAT8OID:
 			value = (char *)palloc0(128);
-			sprintf(value, "%lf", DatumGetFloat8(val));
+			snprintf(value, 128, "%lf", DatumGetFloat8(val));
 		case NUMERICOID:
 			value = OidOutputFunctionCall(outfuncoid, val);
 			break;
@@ -278,8 +276,8 @@ composite_to_yaml(Datum composite, StringInfo result, bool use_line_feeds)
 Datum
 row_to_yaml(PG_FUNCTION_ARGS)
 {
-	Datum		array = PG_GETARG_DATUM(0);
 	StringInfo	result;
+	Datum		array = PG_GETARG_DATUM(0);
 
 	result = makeStringInfo();
 

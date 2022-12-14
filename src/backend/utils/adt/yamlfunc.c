@@ -89,6 +89,18 @@ makeYamlContext(text *yaml, bool need_escapes)
 		need_escapes);
 }
 
+void
+cleanYamlContext(YamlContext *context)
+{
+    for(unsigned int i = 0; i < context->events_length; i++)
+    {
+        yaml_event_delete(context->events[i]);
+    }
+    pfree(context->events);
+    yaml_parser_delete(&context->parser);
+    pfree(context);
+}
+
 /*
  * yaml_count_array_size
  *
@@ -262,7 +274,7 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
 
     yaml_version_directive_t document_version_directive = {
         /*Major*/ 1,
-        /*Minor*/ 2
+        /*Minor*/ 1
     };
     /** Creat the starting emitter events */
     assert(yaml_document_start_event_initialize(&document_start_event,&document_version_directive, NULL, NULL, 1) != 0);
@@ -436,6 +448,8 @@ yaml_sequence_elements(PG_FUNCTION_ARGS)
                 break;
         }
     }
+    cleanYamlContext(context);
+    PG_RETURN_NULL();
 }
 
 

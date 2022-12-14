@@ -59,6 +59,9 @@ makeYamlContextCstringLen(char *yaml, int len, int encoding, bool need_escapes)
 YamlParseErrorType
 pg_parse_yaml(YamlContext *context)
 {
+	int status;
+	yaml_event_t* p_event;
+
 	// Create an array to store yaml events as they are parsed.
 	context->events_capacity = 256;
 	context->events_length   = 0;
@@ -66,12 +69,11 @@ pg_parse_yaml(YamlContext *context)
 		sizeof(yaml_event_t*) * context->events_capacity
 	);
 
-	yaml_event_t* p_event;
 	do {
 		p_event = palloc0(sizeof(yaml_event_t));
 
 		/** Parse the YAML file */
-		int status = yaml_parser_parse(&(context->parser), p_event);
+		status = yaml_parser_parse(&(context->parser), p_event);
 		if(!status)
 			return context->parser.error;
 
