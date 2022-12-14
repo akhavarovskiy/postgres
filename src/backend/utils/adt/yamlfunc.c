@@ -89,10 +89,88 @@ makeYamlContext(text *yaml, bool need_escapes)
 		need_escapes);
 }
 
+#define INDENT "  "
+#define STRVAL(x) ((x) ? (char*)(x) : "")
+
+void indent(int level)
+{
+    int i;
+    for (i = 0; i < level; i++) {
+        printf("%s", INDENT);
+    }
+}
+
+void print_yaml_tree(YamlContext *context)
+{
+    static int level = 0;
+
+    printf("====================================\n");
+    printf(" Printing YAML object Tree : %d\n", context->events_length);
+    printf("====================================\n");
+
+    for(unsigned int i = 0; i < context->events_length; i++)
+    {
+        yaml_event_t *event = context->events[i];
+        switch (event->type) {
+        case YAML_NO_EVENT:
+            indent(level);
+            printf("no-event (%d)\n", event->type);
+            break;
+        case YAML_STREAM_START_EVENT:
+            indent(level++);
+            printf("stream-start-event (%d)\n", event->type);
+            break;
+        case YAML_STREAM_END_EVENT:
+            indent(--level);
+            printf("stream-end-event (%d)\n", event->type);
+            break;
+        case YAML_DOCUMENT_START_EVENT:
+            indent(level++);
+            printf("document-start-event (%d)\n", event->type);
+            break;
+        case YAML_DOCUMENT_END_EVENT:
+            indent(--level);
+            printf("document-end-event (%d)\n", event->type);
+            break;
+        case YAML_ALIAS_EVENT:
+            indent(level);
+            printf("alias-event (%d)\n", event->type);
+            break;
+        case YAML_SCALAR_EVENT:
+            indent(level);
+            printf("scalar-event (%d) = {value=\"%s\", length=%d}\n",
+                event->type,
+                event->data.scalar.value,
+                (int)event->data.scalar.length);
+            break;
+        case YAML_SEQUENCE_START_EVENT:
+            indent(level++);
+            printf("sequence-start-event (%d)\n", event->type);
+            break;
+        case YAML_SEQUENCE_END_EVENT:
+            indent(--level);
+            printf("sequence-end-event (%d)\n", event->type);
+            break;
+        case YAML_MAPPING_START_EVENT:
+            indent(level++);
+            printf("mapping-start-event (%d)\n", event->type);
+            break;
+        case YAML_MAPPING_END_EVENT:
+            indent(--level);
+            printf("mapping-end-event (%d)\n", event->type);
+            break;
+        }
+        if (level < 0) {
+            fprintf(stderr, "indentation underflow!\n");
+            level = 0;
+        }
+    }
+}
+
 void
 cleanYamlContext(YamlContext *context)
 {
-    for(unsigned int i = 0; i < context->events_length - 1; i++)
+    for(unsigned int i = 0; i < context->events_length; i++)
     {
         yaml_event_delete(context->events[i]);
         pfree(context->events[i]);
@@ -292,34 +370,77 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
 
     for(int i = location; (i < context->events_length) && (done == 0); i++)
     {
+        int status;
+        yaml_event_t event_copy;
         yaml_event_t * event = context->events[i];
         switch (event->type)
         {
         case YAML_SCALAR_EVENT:
-            if(!yaml_emitter_emit(&emitter, event))
+            status = yaml_scalar_event_initialize(
+                &event_copy,
+                event->data.scalar.anchor,
+                event->data.scalar.tag,
+                event->data.scalar.value,
+                event->data.scalar.length,
+                event->data.scalar.style,
+                event->data.scalar.quoted_implicit,
+                event->data.scalar.style
+            );
+            if(status == 0) {
+                print_emitter_error(&emitter, __LINE__);
+            }
+            if(!yaml_emitter_emit(&emitter, &event_copy))
                 print_emitter_error(&emitter, __LINE__);
             if(scope == 0) { done = 1; }
             break;
 
         case YAML_SEQUENCE_START_EVENT:
             scope++;
-            if(!yaml_emitter_emit(&emitter, event))
+            status = yaml_sequence_start_event_initialize(
+                &event_copy,
+                event->data.sequence_start.anchor,
+                event->data.sequence_start.tag,
+                event->data.sequence_start.implicit,
+                event->data.sequence_start.style
+            );
+            if(status == 0) {
+                print_emitter_error(&emitter, __LINE__);
+            }
+            if(!yaml_emitter_emit(&emitter, &event_copy))
                 print_emitter_error(&emitter, __LINE__);
             break;
         case YAML_SEQUENCE_END_EVENT:
             scope--;
-            if(!yaml_emitter_emit(&emitter, event))
+            status = yaml_sequence_end_event_initialize(&event_copy);
+            if(status == 0) {
+                print_emitter_error(&emitter, __LINE__);
+            }
+            if(!yaml_emitter_emit(&emitter, &event_copy))
                 print_emitter_error(&emitter, __LINE__);
             if(scope == 0) { done = 1; break; }
             break;
         case YAML_MAPPING_START_EVENT:
             scope++;
-            if(!yaml_emitter_emit(&emitter, event))
+            status = yaml_mapping_start_event_initialize(
+                &event_copy,
+                event->data.mapping_start.anchor,
+                event->data.mapping_start.tag,
+                event->data.mapping_start.implicit,
+                event->data.mapping_start.style
+            );
+            if(status == 0) {
+                print_emitter_error(&emitter, __LINE__);
+            }
+            if(!yaml_emitter_emit(&emitter, &event_copy))
                 print_emitter_error(&emitter, __LINE__);
             break;
         case YAML_MAPPING_END_EVENT:
             scope--;
-            if(!yaml_emitter_emit(&emitter, event))
+            status = yaml_mapping_end_event_initialize(&event_copy);
+            if(status == 0) {
+                print_emitter_error(&emitter, __LINE__);
+            }
+            if(!yaml_emitter_emit(&emitter, &event_copy))
                 print_emitter_error(&emitter, __LINE__);
             if(scope == 0) { done = 1; break; }
             break;
@@ -357,10 +478,13 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
     yaml_event_delete(&stream_end_event);
     yaml_emitter_delete(&emitter);
 
-    if(size_written == 0)
+    if(size_written == 0) {
+        pfree(buffer);
         return NULL;
+    }
+
     result = cstring_to_text_with_len((const char*)(&buffer[14]), size_written - 14);
-    // free(buffer);
+    pfree(buffer);
     return result;
 }
 
@@ -385,8 +509,8 @@ yaml_object_field(PG_FUNCTION_ARGS)
     if(child_location != -1) {
         result = yaml_get_sub_tree(context, child_location);
     }
-    // pfree(pathstr);
-    // cleanYamlContext(context);
+    pfree(pathstr);
+    cleanYamlContext(context);
     if (result != NULL)
         PG_RETURN_TEXT_P(result);
     else
@@ -454,7 +578,6 @@ yaml_sequence_elements(PG_FUNCTION_ARGS)
                 break;
         }
     }
-    // cleanYamlContext(context);
     PG_RETURN_NULL();
 }
 
