@@ -139,8 +139,10 @@ yaml_sequence_length(PG_FUNCTION_ARGS)
 			(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				errmsg("ERROR: cannot get sequence length of a non-sequence")));
 	}
+	int count = yaml_count_array_size(context);
+	cleanYamlContext(context);
 	PG_RETURN_INT32(
-		yaml_count_array_size(context)
+		count
 	);
 }
 
