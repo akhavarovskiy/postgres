@@ -359,7 +359,7 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
     if(size_written == 0)
         return NULL;
     result = cstring_to_text_with_len((const char*)(&buffer[14]), size_written - 14);
-    free(buffer);
+    // free(buffer);
     return result;
 }
 
