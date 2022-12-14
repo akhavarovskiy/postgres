@@ -96,9 +96,8 @@ cleanYamlContext(YamlContext *context)
     {
         yaml_event_delete(context->events[i]);
     }
-    pfree(context->events);
-    yaml_parser_delete(&context->parser);
-    pfree(context);
+    // pfree(context->events);
+    // yaml_parser_delete(&context->parser);
 }
 
 /*
