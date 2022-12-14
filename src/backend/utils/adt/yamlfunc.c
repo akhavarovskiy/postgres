@@ -518,6 +518,30 @@ yaml_object_field(PG_FUNCTION_ARGS)
 }
 
 Datum
+yaml_object_field_text(PG_FUNCTION_ARGS)
+{
+    text   *yaml    = PG_GETARG_TEXT_PP(0);
+    text   *path    = PG_GETARG_TEXT_PP(1);
+    char   *pathstr = text_to_cstring(path);
+    text   *result  = NULL;
+    int     child_location;
+
+    YamlContext * context = makeYamlContext(yaml, false);
+    pg_parse_yaml_or_ereport(context);
+
+    child_location = yaml_find_key_on_root(context, pathstr);
+    if(child_location != -1) {
+        result = yaml_get_sub_tree(context, child_location);
+    }
+    pfree(pathstr);
+    cleanYamlContext(context);
+    if (result != NULL)
+        PG_RETURN_TEXT_P(result);
+    else
+        PG_RETURN_NULL();
+}
+
+Datum
 yaml_sequence_elements(PG_FUNCTION_ARGS)
 {
     // int   event_type, scope = 0;
