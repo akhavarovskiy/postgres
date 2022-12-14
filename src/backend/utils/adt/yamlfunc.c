@@ -92,16 +92,14 @@ makeYamlContext(text *yaml, bool need_escapes)
 void
 cleanYamlContext(YamlContext *context)
 {
-    for(unsigned int i = 0; i < context->events_length; i++)
+    for(unsigned int i = 0; i < context->events_length - 1; i++)
     {
-        if(context->events[i] != NULL) {
-            printf("Deleting event %d\n", context->events[i]->type);
-            fflush(stdout);
-            yaml_event_delete(context->events[i]);
-        }
+        yaml_event_delete(context->events[i]);
+        pfree(context->events[i]);
     }
-    // pfree(context->events);
-    // yaml_parser_delete(&context->parser);
+    pfree(context->events);
+    yaml_parser_delete(&context->parser);
+    pfree(context);
 }
 
 /*
