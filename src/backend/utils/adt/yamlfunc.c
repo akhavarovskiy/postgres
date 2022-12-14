@@ -384,6 +384,7 @@ yaml_object_field(PG_FUNCTION_ARGS)
     if(child_location != -1) {
         result = yaml_get_sub_tree(context, child_location);
     }
+    pfree(pathstr);
     cleanYamlContext(context);
     if (result != NULL)
         PG_RETURN_TEXT_P(result);
@@ -452,7 +453,7 @@ yaml_sequence_elements(PG_FUNCTION_ARGS)
                 break;
         }
     }
-    cleanYamlContext(context);
+    // cleanYamlContext(context);
     PG_RETURN_NULL();
 }
 
