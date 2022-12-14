@@ -94,7 +94,11 @@ cleanYamlContext(YamlContext *context)
 {
     for(unsigned int i = 0; i < context->events_length; i++)
     {
-        yaml_event_delete(context->events[i]);
+        if(context->events[i] != NULL) {
+            printf("Deleting event %d\n", context->events[i]->type);
+            fflush(stdout);
+            yaml_event_delete(context->events[i]);
+        }
     }
     // pfree(context->events);
     // yaml_parser_delete(&context->parser);
@@ -383,8 +387,8 @@ yaml_object_field(PG_FUNCTION_ARGS)
     if(child_location != -1) {
         result = yaml_get_sub_tree(context, child_location);
     }
-    pfree(pathstr);
-    cleanYamlContext(context);
+    // pfree(pathstr);
+    // cleanYamlContext(context);
     if (result != NULL)
         PG_RETURN_TEXT_P(result);
     else
