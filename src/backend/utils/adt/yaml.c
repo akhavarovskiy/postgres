@@ -44,6 +44,7 @@ yaml_in(PG_FUNCTION_ARGS)
 	/* validate it */
 	yamlContext = makeYamlContext(result, false);
 	pg_parse_yaml_or_ereport(yamlContext);
+	cleanYamlContext(yamlContext);
 
 	/* Internal representation is the same as text, for now */
 	PG_RETURN_TEXT_P(result);
