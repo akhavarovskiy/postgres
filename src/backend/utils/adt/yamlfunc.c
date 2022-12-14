@@ -255,6 +255,7 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
     /** Create the emitter*/
     unsigned int scope = 0, done  = 0;
     yaml_emitter_t emitter;
+    text * result;
     yaml_emitter_initialize(&emitter);
     yaml_emitter_set_canonical(&emitter, 0);
     yaml_emitter_set_unicode(&emitter, 1);
@@ -357,7 +358,9 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
 
     if(size_written == 0)
         return NULL;
-    return cstring_to_text_with_len((const char*)(&buffer[14]), size_written - 14);
+    result = cstring_to_text_with_len((const char*)(&buffer[14]), size_written - 14);
+    free(buffer);
+    return result;
 }
 
 /*
