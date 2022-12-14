@@ -359,7 +359,7 @@ text * yaml_get_sub_tree(YamlContext * context, int location)
     if(size_written == 0)
         return NULL;
     result = cstring_to_text_with_len((const char*)(&buffer[14]), size_written - 14);
-    pfree(buffer);
+    free(buffer);
     return result;
 }
 
@@ -384,6 +384,7 @@ yaml_object_field(PG_FUNCTION_ARGS)
     if(child_location != -1) {
         result = yaml_get_sub_tree(context, child_location);
     }
+    cleanYamlContext(context);
     if (result != NULL)
         PG_RETURN_TEXT_P(result);
     else
